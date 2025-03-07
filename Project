@@ -1,0 +1,153 @@
+UserMessageModel:
+
+package com.lksystem.model;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class UserMessage {
+    private String userName;
+    private String client;
+    private String message;
+    private String timestamp;
+
+    public UserMessage(String userName, String client) {
+        this.userName = userName;
+        this.client = client;
+        this.timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a z"));
+        generateMessage();
+    }
+
+    private void generateMessage() {
+        if ("Client1".equals(client)) {
+            this.message = "I " + userName + " do acknowledge to accept the terms at " + timestamp;
+        } else if ("Client2".equals(client)) {
+            this.message = "I " + userName + " agree that I have read the terms and condition shared at " + timestamp;
+        }
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public String getClient() {
+        return client;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+}
+
+
+UserControlModel:
+
+package com.lksystem.controller;
+
+import com.lksystem.model.UserMessage;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api")
+public class UserMessageController {
+
+    private static final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getLogger(UserMessageController.class);
+
+    // POST method to accept the user and client details
+    @PostMapping("/message")
+    public ResponseEntity<Map<String, String>> postMessage(@RequestParam String userName, @RequestParam String client) {
+        try {
+            // Input validation (basic)
+            if (userName == null || userName.isEmpty() || client == null || client.isEmpty()) {
+                logger.error("UserName or Client is missing");
+                return new ResponseEntity<>(createResponse("Error", "UserName and Client must not be empty."), HttpStatus.BAD_REQUEST);
+            }
+
+            if (!client.equals("Client1") && !client.equals("Client2")) {
+                logger.error("Invalid Client: " + client);
+                return new ResponseEntity<>(createResponse("Error", "Invalid client provided."), HttpStatus.BAD_REQUEST);
+            }
+
+            // Generate message
+            UserMessage userMessage = new UserMessage(userName, client);
+
+            logger.info("Message generated successfully for User: " + userName + " and Client: " + client);
+            return new ResponseEntity<>(createResponse("Success", userMessage.getMessage()), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error generating message: " + e.getMessage(), e);
+            return new ResponseEntity<>(createResponse("Error", "An error occurred while processing the request."), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // GET method to retrieve message by user name and client
+    @GetMapping("/message")
+    public ResponseEntity<Map<String, String>> getMessage(@RequestParam String userName, @RequestParam String client) {
+        try {
+            // Input validation (basic)
+            if (userName == null || userName.isEmpty() || client == null || client.isEmpty()) {
+                logger.error("UserName or Client is missing");
+                return new ResponseEntity<>(createResponse("Error", "UserName and Client must not be empty."), HttpStatus.BAD_REQUEST);
+            }
+
+            if (!client.equals("Client1") && !client.equals("Client2")) {
+                logger.error("Invalid Client: " + client);
+                return new ResponseEntity<>(createResponse("Error", "Invalid client provided."), HttpStatus.BAD_REQUEST);
+            }
+
+            // Generate message
+            UserMessage userMessage = new UserMessage(userName, client);
+
+            logger.info("Message fetched successfully for User: " + userName + " and Client: " + client);
+            return new ResponseEntity<>(createResponse("Success", userMessage.getMessage()), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error generating message: " + e.getMessage(), e);
+            return new ResponseEntity<>(createResponse("Error", "An error occurred while processing the request."), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private Map<String, String> createResponse(String status, String message) {
+        Map<String, String> response = new HashMap<>();
+        response.put("status", status);
+        response.put("message", message);
+        return response;
+    }
+}
+
+Dependency:
+
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-api</artifactId>
+    <version>2.20.0</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-core</artifactId>
+    <version>2.20.0</version>
+</dependency>
+
+
+XML file:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="Console" />
+        </Root>
+    </Loggers>
+</Configuration>
